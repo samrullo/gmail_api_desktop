@@ -1,4 +1,5 @@
 from __future__ import print_function
+import pathlib
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -12,22 +13,27 @@ if __name__ == '__main__':
     """Shows basic usage of the Gmail API.
     Lists the user's Gmail labels.
     """
+    creds_folder = pathlib.Path(r"C:\Users\amrul\programming\secret_keys")
+    creds_filename = "credentials.json"
+    tokens_filename = "tokens.json"
+    creds_path = creds_folder / creds_filename
+    creds_path_str = str(creds_path)
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('credentials/token.json'):
-        creds = Credentials.from_authorized_user_file('credentials/token.json', SCOPES)
+    if (creds_folder / tokens_filename).exists():
+        creds = Credentials.from_authorized_user_file(str(creds_folder / tokens_filename), SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials/credentials.json', SCOPES)
+                str(creds_folder / creds_filename), SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('credentials/token.json', 'w') as token:
+        with open(creds_folder / tokens_filename, 'w') as token:
             token.write(creds.to_json())
 
     service = build('gmail', 'v1', credentials=creds)

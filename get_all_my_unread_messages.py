@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os.path
+import pathlib
 import re
 from googleapiclient.discovery import build, Resource
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -14,11 +15,12 @@ import datetime
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s %(lineno)s]')
 
-gmail_address = "nohbus.veollurma@gmail.com"
+gmail_address = "amrulloev.subhon@gmail.com"
 gmail_username = gmail_address.split('@')[0]
-creds_file = f"{gmail_username}_credentials.json"
-token_file = f"{gmail_username}_token.json"
-service = get_gmail_service(creds_folder="credentials", creds_file=creds_file, token_file=token_file)
+creds_file = "credentials.json"
+token_file = "tokens.json"
+service = get_gmail_service(creds_folder=pathlib.Path.cwd() / "credentials", creds_file=creds_file,
+                            token_file=token_file)
 
 messages_df = pd.DataFrame(columns=['message_id', 'internal_date', 'from', 'subject', 'snippet', 'labels'])
 
@@ -53,7 +55,7 @@ counter = 0
 
 messages_df_list = []
 nextPageToken = None
-max_iter = 20000 / 100
+max_iter = 200 / 100
 while counter < max_iter:
     if not nextPageToken:
         messages_list_resource = service.users().messages().list(userId='me', q='is:unread').execute()
@@ -69,7 +71,6 @@ while counter < max_iter:
 
 all_messages_df = pd.concat(messages_df_list)
 all_messages_df.index = range(len(all_messages_df))
-
 
 # retrieve sender email address and sender domain
 for i, row in all_messages_df.iterrows():
@@ -87,9 +88,9 @@ for i, row in all_messages_df.iterrows():
             all_messages_df.loc[i, 'sender_domain'] = sender_domain
             logging.info(f"{i}/{len(all_messages_df)} finished retrieving mail address")
 
-folder = '/Users/samrullo/Documents/learning/programming/gmail_api_experiment'
+folder = pathlib.Path.cwd() / "data"
 all_messages_file = f'{gmail_username}_unread_gmail_messages_downloaded_on_{datetime.date.today()}.csv'
-all_messages_df.to_csv(os.path.join(folder, all_messages_file))
+all_messages_df.to_csv(folder / all_messages_file)
 logging.info(f"saved {len(all_messages_df)} messages to the folder")
-by_sender_domain_df=all_messages_df.groupby('sender_domain')[['message_id']].count()
-by_sender_domain_df.to_csv(os.path.join(folder,f"{gmail_username}_by_sender_domain.csv"))
+by_sender_domain_df = all_messages_df.groupby('sender_domain')[['message_id']].count()
+by_sender_domain_df.to_csv(folder / f"{gmail_username}_by_sender_domain.csv")
